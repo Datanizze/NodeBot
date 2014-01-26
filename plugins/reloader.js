@@ -7,7 +7,7 @@ module.exports = function(ircHandler) {
 
   return {
     'message': {
-      'match': [/reload/i],
+      'match': /reload/i,
       'handler': function(from, to, message) {
         self.ircHandler.reloadPlugin('example.js');
       }
