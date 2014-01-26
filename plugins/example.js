@@ -1,18 +1,27 @@
-(function(module, undefined) {
+module.exports = function(ircHandler) {
   'use strict';
-  module.exports = {
+
+  var self = this;
+  self.ircHandler = ircHandler;
+  console.log('EXAMPLE: Plugin loaded');
+
+  return {
     'join': {
       // channels: ['#test'],
       'match': [
-        /^dbwebb_/i,
-        'harald'
+        /^pelle/i
       ],
-      handler: function(channel, nick, message) {
+      'handler': function(channel, nick, message) {
         return {
           'to': channel,
-          'message': nick + " joined ze channel! WELCOME!"
+          'message': nick + " joined the channel! WELCOME!"
         };
+      }
+    },
+    'message': {
+      // 'match': [],
+      'handler': function(from, to, message) {
       }
     }
   };
-})(module);
+};
