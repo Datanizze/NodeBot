@@ -106,9 +106,8 @@ IrcHandler.prototype.enableAllListeners = function() {
 IrcHandler.prototype.shouldRespond = function(matcher, target) {
   var matched = false;
   var self = this;
-  // Check if plugin listens for joins
-  // Check if match exist, if it doesn't, we assume the plugin created
-  // didn't want to write a match if he/she/it want to listen to all joins.
+  // Check if match exist, if it doesn't, we assume the plugin creator
+  // didn't want to write a match if he/she/it wants to listen to all joins.
   if (matcher instanceof Array) {
     var i = 0;
     while (!matched && i < matcher.length) {
@@ -138,6 +137,7 @@ IrcHandler.prototype.toggleJoinListener = function(state) {
 
     async.each(self.enabledPlugins, function(pluginName) {
       var listeners = self.plugins[pluginName].plugin;
+      // Check if plugin listens for joins
       if (typeof listeners.join !== 'undefined') {
         if (
           self.shouldRespond(listeners.join.match, nick) ||
