@@ -2,6 +2,46 @@ var _ = require('underscore');
 var util = require('util');
 var async = require('async');
 
+
+/**
+ * Removes a module from the cache
+ */
+function uncacheModule(moduleName) {
+  // Run over the cache looking for the files
+  // loaded by the specified module name
+  require.searchCache(moduleName, function (mod) {
+    delete require.cache[mod.id];
+  });
+}
+
+/**
+ * Runs over the cache to search for all the cached
+ * files
+ */
+require.searchCache = function (moduleName, callback) {
+  // Resolve the module identified by the specified name
+  var mod = require.resolve(moduleName);
+
+  // Check if the module has been resolved and found within
+  // the cache
+  if (mod && ((mod = require.cache[mod]) !== undefined)) {
+    // Recursively go over the results
+    (function run(mod) {
+      // Go over each of the module's children and
+      // run over it
+      mod.children.forEach(function (child) {
+          run(child);
+      });
+
+      // Call the specified callback providing the
+      // found module
+      callback(mod);
+    })(mod);
+  }
+};
+
+
+
 // Define the function (class)
 var IrcHandler = function(ircClient, permissions) {
   'use strict';
@@ -33,12 +73,16 @@ var IrcHandler = function(ircClient, permissions) {
 // makes a reguire call to load the plugin and
 // registers what messages it want to listen to
 IrcHandler.prototype.loadPlugin = function(name, pluginPath) {
+  var self = this;
   console.log('Loading plugin "' + name + '" [' + pluginPath + ']');
   // TODO: handle errors like pluginPath == nonexistent
+  var Plugin = require(pluginPath);
   this.plugins[name] = {
-    'plugin': require(pluginPath),
+    'plugin': new Plugin(self),
     'path': pluginPath
   };
+  // Attach the handlerto the plugin for extended (undocumented) access to the handler
+  this.plugins[name].handler = self;
   this.enabledPlugins.push(name);
 };
 
@@ -48,12 +92,13 @@ IrcHandler.prototype.reloadPlugin = function(name) {
     console.log('No plugin loaded called', name ,'found');
     return false;
   }
-
-  this.disablePlugin(name);
+  var pluginPath = this.plugins[name].path;
+  this.removePlugin(name);
+  // Delete the module from the require cache.. (fingers crossed no memory leaks)
+  uncacheModule(pluginPath);
   // Is this delete necessary? If I understand things correctly the old plugin will be GC'd
   // automatically since it's no longer referenced when assigning the reloaded.
-  delete this.plugins[name].plugin;
-  this.plugins[name].plugin = require(this.plugins[name].path);
+  this.loadPlugin(name, pluginPath);
 };
 
 // activates all listeners for plugin, needs to be registered.
@@ -76,6 +121,7 @@ IrcHandler.prototype.disablePlugin = function(name) {
 
 // removes the plugin completly
 IrcHandler.prototype.removePlugin = function(name) {
+  this.disablePlugin(name);
   // removing a plugin will not remove it from the "disabled" plugins...
   // so if you're adding it again later don't forget to enable it.
   var pluginIndex = this.enabledPlugins.indexOf(name);
@@ -99,28 +145,47 @@ IrcHandler.prototype.enableAllListeners = function() {
 
 
 
+// TODO: add permissions handling.
+IrcHandler.prototype.handleMessage = function(type, matchTargets, callback) {
+  var self = this;
+  async.each(self.enabledPlugins, function(pluginName) {
+    var listener = self.plugins[pluginName].plugin[type];
+    // Check if plugin listens for joins
+    if (typeof listener !== 'undefined') {
+      if (self.shouldRespond(listener.match, matchTargets)) {
+        callback(listener.handler, pluginName);
+      }
+    }
+  });
+};
 
 
-
-
-IrcHandler.prototype.shouldRespond = function(matcher, target) {
+IrcHandler.prototype.shouldRespond = function(matcher, targets) {
   var matched = false;
   var self = this;
   // Check if match exist, if it doesn't, we assume the plugin creator
   // didn't want to write a match if he/she/it wants to listen to all joins.
-  if (matcher instanceof Array) {
+  if (targets instanceof Array) {
     var i = 0;
-    while (!matched && i < matcher.length) {
-      matched = self.shouldRespond(matcher[i++], target);
+    while (!matched && i < targets.length) {
+      matched = self.shouldRespond(matcher, targets[i++]);
+    }
+    return matched;
+  }
+
+  if (matcher instanceof Array) {
+    var j = 0;
+    while (!matched && j < matcher.length) {
+      matched = self.shouldRespond(matcher[j++], targets);
     }
   } else if (typeof matcher === 'undefined') {
     matched = true;
   } else if (typeof matcher == 'boolean') {
     matched = matcher;
   } else if (matcher instanceof RegExp) {
-    matched = matcher.test(target);
+    matched = matcher.test(targets);
   } else if (typeof matcher == "string" ) {
-    matched = (target.indexOf(matcher) !== -1);
+    matched = (targets.indexOf(matcher) !== -1);
   }
   return matched;
 };
@@ -129,24 +194,15 @@ IrcHandler.prototype.shouldRespond = function(matcher, target) {
 IrcHandler.prototype.toggleJoinListener = function(state) {
   var self = this;
   var callback = function(channel, nick, message) {
-    console.log('join');
+    console.log('join', channel, nick);
     // Don't do anything if the bot is the one who is joining
     if (nick == self.client.nick) {
       return false;
     }
 
-    async.each(self.enabledPlugins, function(pluginName) {
-      var listeners = self.plugins[pluginName].plugin;
-      // Check if plugin listens for joins
-      if (typeof listeners.join !== 'undefined') {
-        if (
-          self.shouldRespond(listeners.join.match, nick) ||
-          self.shouldRespond(listeners.join.match, channel)
-        ) {
-          var response = listeners.join.handler(channel, nick, message);
-          self.client.say(response.to, response.message);
-        }
-      }
+    self.handleMessage('join', [channel, nick], function(handler) {
+      var response = handler(channel, nick, message);
+      self.client.say(response.to, response.message);
     });
   };
 
@@ -172,8 +228,9 @@ IrcHandler.prototype.toggleNoticeListener = function(state) {
 
 IrcHandler.prototype.toggleErrorListener = function(state) {
   var self = this;
-  var callback = function() {
-    console.log('error');
+  var callback = function(message) {
+    console.log('error', message);
+
   };
 
   if (state) {
@@ -250,8 +307,17 @@ IrcHandler.prototype.toggleKillListener = function(state) {
 
 IrcHandler.prototype.toggleMessageListener = function(state) {
   var self = this;
-  var callback = function() {
-    console.log('message');
+  var callback = function(from, to, message, raw) {
+    console.log('message', from, to, message);
+
+    self.handleMessage('message', [from, to, message], function(handler, pluginName) {
+      var response = handler(from, to, message);
+      if (response && response.to && response.message) {
+        self.client.say(response.to, response.message);
+      } else {
+        console.log(pluginName, 'operated in silence');
+      }
+    });
   };
 
   if (state) {
