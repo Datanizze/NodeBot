@@ -9,7 +9,7 @@ var bot = new NodeBot('irc.bsnet.se', 'MarNot', {
   autoRejoin: false
 });
 
-
+// Simple test of middleware....
 bot.use(function first(req, res, next) {
   req.stamp = 'I WAS HERE';
   next();
