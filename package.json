@@ -2,8 +2,6 @@
   "dependencies": {
     "irc": "~0.3.6",
     "underscore": "~1.5.2",
-    "mongoose": "~3.8.4",
-    "async": "~0.2.10",
     "request": "~2.33.0"
   }
 }
