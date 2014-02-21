@@ -34,7 +34,7 @@ bot.on('message', /coc\s?#?[\d]+/, function(req, res) {
 
 
 
-bot.on('message', bot.nick +': ?försvinn', function(req, res) {
+bot.on('message', bot.nick +': ?leave', function(req, res) {
   bot.leave(req.to, 'POFF!');
 });
 
