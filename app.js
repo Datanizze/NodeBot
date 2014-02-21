@@ -17,18 +17,24 @@ bot.use(function first(req, res, next) {
 });
 
 
-bot.on('message', /^!coc#?[\d]*$/, function(req, res) {
-  console.log();
-
-  var match = req.text.match(/[\d]+/);
-
-  if (!match) {
-    bot.say(req.to, 'Need a coc number');
-  } else {
-    coc.getCoc(match[0], function(coc) {
-      var msg = coc.name || coc.message;
-      bot.say(req.to, msg);
-    });
+bot.on('message', /coc\s?#?[\d]+/, function(req, res) {
+  if (BotHelper.startsWith(bot.nick, req.text)) {
+    var match = req.text.match(/[\d]+/);
+    if (!match) {
+      bot.say(req.to, 'Need a coc number');
+    } else {
+      coc.getCoc(match[0], function(coc) {
+        var msg = coc.name || coc.message;
+        bot.say(req.to, msg);
+      });
+    }
   }
+});
+
+
+
+
+bot.on('message', bot.nick +': ?försvinn', function(req, res) {
+  bot.leave(req.to, 'POFF!');
 });
 
