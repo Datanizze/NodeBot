@@ -1,4 +1,5 @@
 var NodeBot = require('./lib/nodebot');
+var BotHelper = require('./lib/helper');
 
 var coc = require('./handlers/coc-handler');
 
