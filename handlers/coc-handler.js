@@ -2,7 +2,7 @@ var request = require('request');
 var mongo = require('mongoskin');
 
 
-module.exports = function CocHandler(cacheTime) {
+function CocHandler(cacheTime) {
   'use strict';
   cacheTime = cacheTime * 1000; // seconds to  milliseconds
   // TODO: make these config variables instead.. hard coding sucks
@@ -19,7 +19,7 @@ module.exports = function CocHandler(cacheTime) {
   var db = mongo.db(getSimpleMongoConnectionString(mongo_config));
 
   var cocs = db.collection('real-cocs');
-  cocs.ensureIndex({"id": 1}, { unique: true, sparse: true}, function(error, result) {
+  cocs.ensureIndex({'id': 1}, { unique: true, sparse: true}, function(error, result) {
     // TODO: check for errors?
     // We shouldn't have any race conditions here,
     // I highly doubt that getCoc (aka any db action)
@@ -131,4 +131,6 @@ module.exports = function CocHandler(cacheTime) {
       }
     });
   };
-};
+}
+
+module.exports = CocHandler;
