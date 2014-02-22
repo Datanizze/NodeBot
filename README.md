@@ -37,14 +37,14 @@ The procedure is the same if the coc doesn't exist in the local database.
 
 example usage:
 ```JavaScript
-  var CocHandler = require('./lib/coc-handler');
+  var CocHandler = require('./handlers/coc-handler');
 
   var coc = new CocHandler(3600); // specify cache time in seconds
   //          random number 1-10 // only 8 cocs exist (as of this writing), set it to 10 to show possibility and handling of nonexistent cocs.
-  coc(Math.floor(Math.random()*10),callback(coc) {
+  coc(Math.floor(Math.random()*10), function(coc) {
     // coc will be the returned code of conduct
     // if the coc exists it will have a name and a description
     // if it doesn't, it will have a message (telling us it doesn't exist)
     console.log(coc.name || coc.message);
-  })
+  });
 ```
