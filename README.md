@@ -29,8 +29,8 @@ He can't do much right now but here is the gist:
 
 ### CoC Handler
 
-Uses http://dbwebb.se/coc as a simple API
-When called, given a coc id, it checks for the coc in a local mongodb collection
+Uses http://dbwebb.se/coc as a simple API.
+When called, given a coc id, it checks for the coc in a local mongodb collection.
 if exists, the timestamp of the coc is checked. If the timestamp is within the cache period
 the coc is returned as is. If the cache time has elapsed, the coc is fetched from dbwebb and saved to the database.
 The procedure is the same if the coc doesn't exist in the local database.
