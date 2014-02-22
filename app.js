@@ -1,13 +1,19 @@
 var NodeBot = require('./lib/nodebot');
 var BotHelper = require('./lib/helper');
 
-var coc = require('./handlers/coc-handler');
+var CocHandler = require('./handlers/coc-handler');
 
+var handlers = {};
+
+handlers.coc = new CocHandler(2*3600);
+
+// TODO: move to external config
 var bot = new NodeBot('irc.bsnet.se', 'MarNot', {
   channels: ['#johansbot'],
   userName: 'Johansbot',
   realName: 'Bot Botsson',
-  autoRejoin: false
+  autoRejoin: false,
+  debug: true
 });
 
 // Simple test of middleware....
@@ -23,7 +29,7 @@ bot.on('message', /coc\s?#?[\d]+/, function(req, res) {
     if (!match) {
       bot.say(req.to, 'Need a coc number');
     } else {
-      coc.getCoc(match[0], function(coc) {
+      handlers.coc(match[0], function(coc) {
         var msg = coc.name || coc.message;
         bot.say(req.to, msg);
       });
