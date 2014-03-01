@@ -23,7 +23,7 @@ The mission of this code is to learn and if all goes well have a nice bot to use
 He can't do much right now but here is the gist:
 
 * Invite:able, invite him to a channel and he will join. (should probably move that away from the wrapper)
-* Parts on que, tell him to leave and he will leave.
+* Parts on demand, tell him to leave and he will leave.
 * code of conduct, shows CoC from http://dbwebb.se/coc.
 
 ## Handlers
