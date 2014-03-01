@@ -12,11 +12,7 @@ handlers.coc = new CocHandler(config.cocs.cacheTime);
 // TODO: move to external config
 var bot = new NodeBot(config.server, config.nick, config.options);
 
-// Simple test of middleware....
-bot.use(function first(req, res, next) {
-  req.stamp = 'I WAS HERE';
-  next();
-});
+bot.use(require('./middlewares/channel-parser'));
 
 
 bot.on('message', /coc\s?#?[\d]+/, function(req, res) {
