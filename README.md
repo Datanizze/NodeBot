@@ -14,7 +14,8 @@ The mission of this code is to learn and if all goes well have a nice bot to use
 * Clone this repo
 * enter repo directory
 * `npm install`
-* change app.js config (since config hardcoded there at the moment)
+* `cp config.sample.js config.js`
+* change config.js to reflect your wishes
 * start with `node app`
 
 ## What can it do?
